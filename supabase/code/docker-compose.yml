@@ -77,8 +77,7 @@ services:
       DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD}
       FORCE_RECREATE: "20260522172226"
     # https://unix.stackexchange.com/a/294837
-    entrypoint: bash -c 'eval "echo \"$$(cat ~/temp.yml)\"" > ~/kong.yml &&
-      /docker-entrypoint.sh kong docker-start'
+    entrypoint: bash -c 'cp ~/temp.yml ~/kong.yml && /docker-entrypoint.sh kong docker-start'
 
   auth:
     image: supabase/gotrue:v2.184.0
