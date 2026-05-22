@@ -360,24 +360,11 @@ services:
       - bash
       - -c
       - |
-        # Start PostgreSQL in background
-        postgres -c config_file=/etc/postgresql/postgresql.conf -c log_min_messages=fatal &
-        PG_PID=$$!
-        # Wait for it to be ready
-        until pg_isready -U postgres -h localhost; do sleep 1; done
-        sleep 2
-        # Fix all role passwords using Unix socket (peer auth — no password needed)
-        psql -U postgres -h /var/run/postgresql -d postgres -c "ALTER ROLE postgres WITH PASSWORD '$${POSTGRES_PASSWORD}';" 2>/dev/null || true
-        psql -U postgres -h /var/run/postgresql -d postgres -c "ALTER ROLE supabase_admin WITH PASSWORD '$${POSTGRES_PASSWORD}';" 2>/dev/null || true
-        psql -U postgres -h /var/run/postgresql -d postgres -c "ALTER ROLE authenticator WITH PASSWORD '$${POSTGRES_PASSWORD}';" 2>/dev/null || true
-        psql -U postgres -h /var/run/postgresql -d postgres -c "ALTER ROLE supabase_auth_admin WITH PASSWORD '$${POSTGRES_PASSWORD}';" 2>/dev/null || true
-        psql -U postgres -h /var/run/postgresql -d postgres -c "ALTER ROLE supabase_storage_admin WITH PASSWORD '$${POSTGRES_PASSWORD}';" 2>/dev/null || true
-        psql -U postgres -h /var/run/postgresql -d postgres -c "ALTER ROLE supabase_functions_admin WITH PASSWORD '$${POSTGRES_PASSWORD}';" 2>/dev/null || true
-        psql -U postgres -h /var/run/postgresql -d postgres -c "ALTER ROLE supabase_read_only_user WITH PASSWORD '$${POSTGRES_PASSWORD}';" 2>/dev/null || true
-        psql -U postgres -h /var/run/postgresql -d postgres -c "ALTER ROLE supabase_replication_admin WITH PASSWORD '$${POSTGRES_PASSWORD}';" 2>/dev/null || true
-        echo "=== Password fix applied ==="
-        # Wait for PostgreSQL process
-        wait $$PG_PID
+        if [ -f /var/lib/postgresql/data/PG_VERSION ]; then
+          echo "=== Wiping PGDATA to reinitialize with correct passwords ==="
+          rm -rf /var/lib/postgresql/data/*
+        fi
+        exec docker-entrypoint.sh postgres -c config_file=/etc/postgresql/postgresql.conf -c log_min_messages=fatal
 
   vector:
     image: timberio/vector:0.28.1-alpine
