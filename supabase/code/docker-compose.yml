@@ -357,14 +357,13 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXP: ${JWT_EXPIRY}
     command:
-      - bash
-      - -c
-      - |
-        if [ -f /var/lib/postgresql/data/PG_VERSION ]; then
-          echo "=== Wiping PGDATA to reinitialize with correct passwords ==="
-          rm -rf /var/lib/postgresql/data/*
-        fi
-        exec docker-entrypoint.sh postgres -c config_file=/etc/postgresql/postgresql.conf -c log_min_messages=fatal
+      [
+        "postgres",
+        "-c",
+        "config_file=/etc/postgresql/postgresql.conf",
+        "-c",
+        "log_min_messages=fatal"
+      ]
 
   vector:
     image: timberio/vector:0.28.1-alpine
