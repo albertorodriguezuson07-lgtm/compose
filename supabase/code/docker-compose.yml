@@ -288,7 +288,7 @@ services:
       PG_META_DB_HOST: ${POSTGRES_HOST}
       PG_META_DB_PORT: ${POSTGRES_PORT}
       PG_META_DB_NAME: ${POSTGRES_DB}
-      PG_META_DB_USER: supabase_admin
+      PG_META_DB_USER: postgres
       PG_META_DB_PASSWORD: ${POSTGRES_PASSWORD}
       CRYPTO_KEY: ${PG_META_CRYPTO_KEY}
 
@@ -316,6 +316,33 @@ services:
       timeout: 2s
       retries: 1
     command: [ "sh", "-c", "while true; do sleep 3600; done" ]
+
+  db-fix-passwords:
+    image: supabase/postgres:15.8.1.085
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGHOST: ${POSTGRES_HOST}
+      PGPORT: ${POSTGRES_PORT}
+      PGDATABASE: ${POSTGRES_DB}
+      PGUSER: postgres
+    entrypoint:
+      - bash
+      - -c
+      - |
+        echo "Fixing Supabase internal role passwords..."
+        psql -v ON_ERROR_STOP=0 -c "ALTER ROLE supabase_admin WITH PASSWORD '$$PGPASSWORD';"
+        psql -v ON_ERROR_STOP=0 -c "ALTER ROLE authenticator WITH PASSWORD '$$PGPASSWORD';"
+        psql -v ON_ERROR_STOP=0 -c "ALTER ROLE supabase_auth_admin WITH PASSWORD '$$PGPASSWORD';"
+        psql -v ON_ERROR_STOP=0 -c "ALTER ROLE supabase_storage_admin WITH PASSWORD '$$PGPASSWORD';"
+        psql -v ON_ERROR_STOP=0 -c "ALTER ROLE supabase_functions_admin WITH PASSWORD '$$PGPASSWORD';"
+        psql -v ON_ERROR_STOP=0 -c "ALTER ROLE supabase_read_only_user WITH PASSWORD '$$PGPASSWORD';"
+        psql -v ON_ERROR_STOP=0 -c "ALTER ROLE supabase_replication_admin WITH PASSWORD '$$PGPASSWORD';"
+        echo "Password fix complete"
+
   db:
     image: supabase/postgres:15.8.1.085
     restart: unless-stopped
